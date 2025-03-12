@@ -1,23 +1,87 @@
 from http import HTTPStatus
 
-from fastapi.testclient import TestClient
+from tests.conftest import client
 
-from fast_zero.app import app
+print(client)
 
 
-def test_root_deve_retornar_ok_ola_mundo():
-    client = TestClient(app)
+def test_create_user(client):
+    response = client.post(  # UserSchema
+        '/users/',
+        json={
+            'username': 'testusername',
+            'email': 'test@test.com',
+            'password': 'password',
+        },
+    )
 
-    response = client.get('/')
+    # 201?
+    assert response.status_code == HTTPStatus.CREATED
+    # Validar userPublic
+    assert response.json() == {
+        'username': 'testusername',
+        'email': 'test@test.com',
+        'id': 1,
+    }
+
+
+def test_read_users(client):
+    response = client.get('/users/')
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'Olá Mundo!'}
+    assert response.json() == {
+        'users': [
+            {
+                'username': 'testusername',
+                'email': 'test@test.com',
+                'id': 1,
+            }
+        ]
+    }
 
 
-def test_html_deve_retornar_ola_mundo():
-    client = TestClient(app)
+def test_update_user(client):
+    response = client.put(
+        '/users/1',
+        json={
+            'password': '123',
+            'username': 'test2',
+            'email': 'test@test.com',
+            'id': 1,
+        },
+    )
 
-    response = client.get('/html')
+    assert response.json() == {
+        'username': 'test2',
+        'email': 'test@test.com',
+        'id': 1,
+    }
+
+
+def test_delete_user(client):
+    response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
-    assert """<h1>Olá, Mundo</h1>""" in response.text
+    assert response.json() == {'message': 'User deleted'}
+
+
+def test_put_user_not_found(client):
+    response = client.put(
+        'users/1000',
+        json={
+            'password': 'test',
+            'username': 'test',
+            'email': 'test@test.com',
+            'id': 1000,
+        },
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+def test_delete_user_not_found(client):
+    response = client.delete('users/10000')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
