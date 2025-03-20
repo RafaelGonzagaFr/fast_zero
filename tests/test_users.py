@@ -28,7 +28,7 @@ def test_create_user_username_already_exists(client, user):
     response = client.post(
         '/users/',
         json={
-            'username': 'Teste',
+            'username': user.username,
             'email': 'test@test.com',
             'password': 'testtest',
         },
@@ -42,8 +42,8 @@ def test_create_user_email_already_exists(client, user):
     response = client.post(
         '/users/',
         json={
-            'username': 'Test',
-            'email': 'teste@test.com',
+            'username': 'test',
+            'email': user.email,
             'password': 'testtest',
         },
     )
@@ -121,9 +121,9 @@ def test_get_current_user_does_not_exists(client):
     assert response.json() == {'detail': 'Could not validate credentials'}
 
 
-def test_update_wrong_user(client, user, token):
+def test_update_wrong_user(client, user, other_user, token):
     response = client.put(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'password': '123',
@@ -137,9 +137,9 @@ def test_update_wrong_user(client, user, token):
     assert response.json() == {'detail': 'Not enough permissions'}
 
 
-def test_delete_wrong_user(client, user, token):
+def test_delete_wrong_user(client, user, other_user, token):
     response = client.delete(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -152,7 +152,7 @@ def test_get_user_by_id(client, user):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'email': 'teste@test.com',
-        'id': 1,
-        'username': 'Teste',
+        'email': user.email,
+        'id': user.id,
+        'username': user.username,
     }
